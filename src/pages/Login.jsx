@@ -40,7 +40,7 @@ function Login({ onLogin }) {
         className="login-container"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.15 }}
       >
         <motion.h1
           className="login-title"
@@ -57,7 +57,7 @@ function Login({ onLogin }) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          Please login to access the admin portal
+          Please login to make changes to the knowledgebase.
         </motion.p>
 
         <form onSubmit={handleSubmit} className="login-form">

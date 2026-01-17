@@ -61,9 +61,34 @@
   outline: none;
 }
 
+/* Custom dropdown styling within form */
+.form-group .custom-dropdown {
+  width: 100%;
+}
+
 .form-group textarea {
   resize: vertical;
   font-family: inherit;
+}
+
+.manage-types-button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.manage-types-button:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  background: rgba(104, 35, 177, 0.1);
 }
 
 .form-actions {

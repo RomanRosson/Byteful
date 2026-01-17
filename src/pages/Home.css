@@ -10,7 +10,7 @@
   width: 100%;
   margin: 0 auto;
   padding: 2rem;
-  padding-top: 1rem;
+  padding-top: 0;
 }
 
 .hero-section {
@@ -88,13 +88,12 @@
 }
 
 .items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .empty-state {
-  grid-column: 1 / -1;
   text-align: center;
   padding: 4rem 2rem;
   color: var(--text-secondary);
@@ -129,7 +128,4 @@
     font-size: 1rem;
   }
 
-  .items-grid {
-    grid-template-columns: 1fr;
-  }
 }

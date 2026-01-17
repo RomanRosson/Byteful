@@ -1,29 +1,77 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiService } from '../services/api';
+import TypesManager from './TypesManager';
+import CustomDropdown from './CustomDropdown';
 import './ItemForm.css';
 
 function ItemForm({ item, onSave, onCancel }) {
   const [formData, setFormData] = useState({
-    type: 'link',
+    type: '',
     title: '',
     content: '',
-    description: '',
-    category: '',
-    tags: ''
+    description: ''
   });
+  const [itemTypes, setItemTypes] = useState([]);
+  const [loadingTypes, setLoadingTypes] = useState(true);
+  const [showTypesManager, setShowTypesManager] = useState(false);
+
+  useEffect(() => {
+    loadItemTypes();
+  }, []);
+
+  // Reload types when form becomes visible (in case types were added while form was open)
+  useEffect(() => {
+    if (!showTypesManager) {
+      loadItemTypes();
+    }
+  }, [showTypesManager]);
 
   useEffect(() => {
     if (item) {
       setFormData({
-        type: item.type || 'link',
+        type: item.type || '',
         title: item.title || '',
         content: item.content || '',
-        description: item.description || '',
-        category: item.category || '',
-        tags: item.tags || ''
+        description: item.description || ''
+      });
+    } else if (itemTypes.length > 0) {
+      // Set default to first available type when creating new item
+      setFormData(prev => {
+        // Only set default if type is not already set
+        if (!prev.type || prev.type.trim() === '') {
+          return { ...prev, type: itemTypes[0] };
+        }
+        return prev;
       });
     }
-  }, [item]);
+  }, [item, itemTypes]);
+
+  const loadItemTypes = async () => {
+    try {
+      setLoadingTypes(true);
+      const types = await apiService.getItemTypes();
+      console.log('ItemForm - Loaded types:', types, 'Type:', typeof types, 'Is Array:', Array.isArray(types)); // Debug log
+      const validTypes = Array.isArray(types) ? types.filter(t => t && typeof t === 'string' && t.trim() !== '') : [];
+      console.log('ItemForm - Valid types:', validTypes);
+      setItemTypes(validTypes);
+      // If no item is being edited and types are loaded, set default type
+      if (!item && validTypes.length > 0) {
+        setFormData(prev => {
+          // Only set default if type is not already set
+          if (!prev.type || prev.type.trim() === '') {
+            return { ...prev, type: validTypes[0] };
+          }
+          return prev;
+        });
+      }
+    } catch (error) {
+      console.error('Error loading item types:', error);
+      setItemTypes([]);
+    } finally {
+      setLoadingTypes(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,6 +83,11 @@ function ItemForm({ item, onSave, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('Form submission - formData:', formData); // Debug log
+    if (!formData.type || !formData.type.trim()) {
+      alert('Type is required. Please select a type from the dropdown.');
+      return;
+    }
     if (!formData.title.trim() || !formData.content.trim()) {
       alert('Title and content are required');
       return;
@@ -62,17 +115,26 @@ function ItemForm({ item, onSave, onCancel }) {
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="type">Type *</label>
-              <select
+              <CustomDropdown
                 id="type"
                 name="type"
-                value={formData.type}
+                value={formData.type || ''}
                 onChange={handleChange}
-                required
+                options={itemTypes}
+                placeholder="Select a type"
+                disabled={loadingTypes || itemTypes.length === 0}
+                required={true}
+                loading={loadingTypes}
+                loadingText="Loading types..."
+                emptyText="No types available - Add types using 'Manage Types' below"
+              />
+              <button
+                type="button"
+                className="manage-types-button"
+                onClick={() => setShowTypesManager(true)}
               >
-                <option value="link">Link</option>
-                <option value="command">Command</option>
-                <option value="site">Site</option>
-              </select>
+                Manage Types
+              </button>
             </div>
 
             <div className="form-group">
@@ -90,9 +152,9 @@ function ItemForm({ item, onSave, onCancel }) {
 
             <div className="form-group">
               <label htmlFor="content">
-                {formData.type === 'link' ? 'URL *' : formData.type === 'command' ? 'Command *' : 'Content *'}
+                {formData.type?.toLowerCase() === 'link' ? 'URL *' : formData.type?.toLowerCase() === 'command' ? 'Command *' : 'Content *'}
               </label>
-              {formData.type === 'command' ? (
+              {formData.type?.toLowerCase() === 'command' ? (
                 <textarea
                   id="content"
                   name="content"
@@ -104,13 +166,13 @@ function ItemForm({ item, onSave, onCancel }) {
                 />
               ) : (
                 <input
-                  type={formData.type === 'link' ? 'url' : 'text'}
+                  type={formData.type?.toLowerCase() === 'link' ? 'url' : 'text'}
                   id="content"
                   name="content"
                   value={formData.content}
                   onChange={handleChange}
                   required
-                  placeholder={formData.type === 'link' ? 'https://example.com' : 'Enter content'}
+                  placeholder={formData.type?.toLowerCase() === 'link' ? 'https://example.com' : 'Enter content'}
                 />
               )}
             </div>
@@ -127,29 +189,6 @@ function ItemForm({ item, onSave, onCancel }) {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="category">Category</label>
-              <input
-                type="text"
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                placeholder="Enter category (optional)"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="tags">Tags (comma-separated)</label>
-              <input
-                type="text"
-                id="tags"
-                name="tags"
-                value={formData.tags}
-                onChange={handleChange}
-                placeholder="tag1, tag2, tag3"
-              />
-            </div>
 
             <div className="form-actions">
               <motion.button
@@ -173,6 +212,18 @@ function ItemForm({ item, onSave, onCancel }) {
           </form>
         </motion.div>
       </motion.div>
+      {showTypesManager && (
+        <TypesManager
+          onClose={async () => {
+            setShowTypesManager(false);
+            // Reload types when manager closes in case types were added/updated
+            await loadItemTypes();
+          }}
+          onTypesUpdated={async () => {
+            await loadItemTypes();
+          }}
+        />
+      )}
     </AnimatePresence>
   );
 }

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import ItemCard from '../components/ItemCard';
+import PoweredBy from '../components/PoweredBy';
 import { apiService } from '../services/api';
 import './Home.css';
 
@@ -11,11 +12,13 @@ function Home() {
   const [filteredItems, setFilteredItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [itemTypes, setItemTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadItems();
+    loadItemTypes();
   }, []);
 
   useEffect(() => {
@@ -35,6 +38,15 @@ function Home() {
     }
   };
 
+  const loadItemTypes = async () => {
+    try {
+      const types = await apiService.getItemTypes();
+      setItemTypes(types);
+    } catch (error) {
+      console.error('Error loading item types:', error);
+    }
+  };
+
   const filterItems = () => {
     let filtered = [...items];
 
@@ -49,9 +61,7 @@ function Home() {
       filtered = filtered.filter(item =>
         item.title.toLowerCase().includes(query) ||
         item.content.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query)) ||
-        (item.category && item.category.toLowerCase().includes(query)) ||
-        (item.tags && item.tags.toLowerCase().includes(query))
+        (item.description && item.description.toLowerCase().includes(query))
       );
     }
 
@@ -83,10 +93,10 @@ function Home() {
           className="hero-section"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.2 }}
         >
           <h1>Welcome to Byteful</h1>
-          <p>Your personal knowledge base for links, commands, and technical resources</p>
+          <p>Our personal knowledge base for links, commands, and tech resources!</p>
         </motion.div>
 
         <div className="filters-section">
@@ -106,7 +116,16 @@ function Home() {
           </motion.div>
 
           <div className="filter-buttons">
-            {['all', 'link', 'command', 'site'].map((type) => (
+            <motion.button
+              key="all"
+              className={`filter-button ${filterType === 'all' ? 'active' : ''}`}
+              onClick={() => setFilterType('all')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              All
+            </motion.button>
+            {itemTypes.map((type) => (
               <motion.button
                 key={type}
                 className={`filter-button ${filterType === type ? 'active' : ''}`}
@@ -114,7 +133,7 @@ function Home() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+                {type}
               </motion.button>
             ))}
           </div>
@@ -136,6 +155,7 @@ function Home() {
           )}
         </div>
       </main>
+      <PoweredBy />
     </div>
   );
 }

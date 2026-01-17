@@ -11,8 +11,12 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setIsAuthenticated(authService.isAuthenticated());
+    // Check authentication on mount
+    const authenticated = authService.isAuthenticated();
+    setIsAuthenticated(authenticated);
     setLoading(false);
+    
+    // If not authenticated and trying to access protected route, redirect will happen in route
   }, []);
 
   const handleLogin = () => {
@@ -38,6 +42,14 @@ function App() {
     );
   }
 
+  // Protected Route Component
+  const ProtectedRoute = ({ children }) => {
+    if (!authService.isAuthenticated()) {
+      return <Navigate to="/login" replace />;
+    }
+    return children;
+  };
+
   return (
     <Router>
       <Routes>
@@ -45,7 +57,7 @@ function App() {
         <Route 
           path="/login" 
           element={
-            isAuthenticated ? (
+            authService.isAuthenticated() ? (
               <Navigate to="/admin" replace />
             ) : (
               <Login onLogin={handleLogin} />
@@ -55,11 +67,9 @@ function App() {
         <Route 
           path="/admin" 
           element={
-            isAuthenticated ? (
+            <ProtectedRoute>
               <Admin onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
+            </ProtectedRoute>
           } 
         />
       </Routes>

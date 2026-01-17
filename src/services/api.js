@@ -1,7 +1,8 @@
 // API service layer to handle HTTP requests to the backend
 // This abstracts the API calls and can be easily swapped for a cloud solution later
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Use relative path in development to leverage Vite proxy, full URL in production
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:3001/api');
 
 export const apiService = {
   // Items
@@ -36,7 +37,10 @@ export const apiService = {
         },
         body: JSON.stringify(item),
       });
-      if (!response.ok) throw new Error('Failed to create item');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to create item' }));
+        throw new Error(errorData.error || `Failed to create item: ${response.status} ${response.statusText}`);
+      }
       return await response.json();
     } catch (error) {
       console.error('Error creating item:', error);
@@ -53,7 +57,10 @@ export const apiService = {
         },
         body: JSON.stringify(item),
       });
-      if (!response.ok) throw new Error('Failed to update item');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to update item' }));
+        throw new Error(errorData.error || `Failed to update item: ${response.status} ${response.statusText}`);
+      }
       return await response.json();
     } catch (error) {
       console.error('Error updating item:', error);
@@ -118,13 +125,111 @@ export const apiService = {
     }
   },
 
-  async getItemsByCategory(category) {
+
+  async getItemTypes() {
     try {
-      // This endpoint would need to be added to the backend if needed
-      const allItems = await this.getAllItems();
-      return allItems.filter(item => item.category === category);
+      const response = await fetch(`${API_BASE_URL}/items/types`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to fetch item types:', response.status, errorText);
+        throw new Error('Failed to fetch item types');
+      }
+      const data = await response.json();
+      console.log('getItemTypes response:', data);
+      // Ensure we return an array
+      if (Array.isArray(data)) {
+        return data.filter(type => type && type.trim() !== ''); // Filter out empty types
+      }
+      return [];
     } catch (error) {
-      console.error('Error fetching items by category:', error);
+      console.error('Error fetching item types:', error);
+      return [];
+    }
+  },
+
+  // Type management
+  async getAllTypes() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/types`);
+      if (!response.ok) throw new Error('Failed to fetch types');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching types:', error);
+      throw error;
+    }
+  },
+
+  async createType(name) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/types`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) {
+        let errorMessage = 'Failed to create type';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (e) {
+          // Response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating type:', error);
+      throw error;
+    }
+  },
+
+  async updateType(id, name) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/types/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) {
+        let errorMessage = 'Failed to update type';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (e) {
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating type:', error);
+      throw error;
+    }
+  },
+
+  async deleteType(id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/types/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        let errorMessage = 'Failed to delete type';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || errorMessage;
+        } catch (e) {
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting type:', error);
       throw error;
     }
   }

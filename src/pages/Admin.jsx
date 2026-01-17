@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import ItemCard from '../components/ItemCard';
 import ItemForm from '../components/ItemForm';
+import PoweredBy from '../components/PoweredBy';
 import { apiService } from '../services/api';
 import { authService } from '../utils/auth';
 import './Admin.css';
@@ -13,6 +14,7 @@ function Admin({ onLogout }) {
   const [filteredItems, setFilteredItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [itemTypes, setItemTypes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,8 +22,14 @@ function Admin({ onLogout }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check authentication on mount and redirect if not authenticated
+    if (!authService.isAuthenticated()) {
+      navigate('/login');
+      return;
+    }
     loadItems();
-  }, []);
+    loadItemTypes();
+  }, [navigate]);
 
   useEffect(() => {
     filterItems();
@@ -38,6 +46,15 @@ function Admin({ onLogout }) {
       console.error('Error loading items:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadItemTypes = async () => {
+    try {
+      const types = await apiService.getItemTypes();
+      setItemTypes(types);
+    } catch (error) {
+      console.error('Error loading item types:', error);
     }
   };
 
@@ -82,6 +99,7 @@ function Admin({ onLogout }) {
       setShowForm(false);
       setEditingItem(null);
       loadItems();
+      loadItemTypes();
     } catch (error) {
       showMessage('error', 'Error saving item');
       console.error('Error saving item:', error);
@@ -97,6 +115,7 @@ function Admin({ onLogout }) {
       await apiService.deleteItem(id);
       showMessage('success', 'Item deleted successfully');
       loadItems();
+      loadItemTypes();
     } catch (error) {
       showMessage('error', 'Error deleting item');
       console.error('Error deleting item:', error);
@@ -135,17 +154,10 @@ function Admin({ onLogout }) {
 
   return (
     <div className="admin">
-      <Header showAdminButton={false} />
+      <Header showAdminButton={false} showAdminLabel={true} />
       
       <main className="admin-content">
         <div className="admin-header">
-          <motion.h1
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            Admin Portal
-          </motion.h1>
           <div className="admin-actions">
             <motion.button
               className="add-button"
@@ -189,7 +201,16 @@ function Admin({ onLogout }) {
           </div>
 
           <div className="filter-buttons">
-            {['all', 'link', 'command', 'site'].map((type) => (
+            <motion.button
+              key="all"
+              className={`filter-button ${filterType === 'all' ? 'active' : ''}`}
+              onClick={() => setFilterType('all')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              All
+            </motion.button>
+            {itemTypes.map((type) => (
               <motion.button
                 key={type}
                 className={`filter-button ${filterType === type ? 'active' : ''}`}
@@ -197,7 +218,7 @@ function Admin({ onLogout }) {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+                {type}
               </motion.button>
             ))}
           </div>
@@ -230,6 +251,7 @@ function Admin({ onLogout }) {
           onCancel={handleCancel}
         />
       )}
+      <PoweredBy />
     </div>
   );
 }

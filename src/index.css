@@ -56,3 +56,14 @@ a {
 a:hover {
   color: var(--accent-hover);
 }
+
+/* Text selection styling */
+::selection {
+  background-color: var(--accent);
+  color: var(--text-primary);
+}
+
+::-moz-selection {
+  background-color: var(--accent);
+  color: var(--text-primary);
+}
