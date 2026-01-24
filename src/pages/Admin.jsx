@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { RefreshCw } from 'lucide-react';
 import Header from '../components/Header';
 import ItemCard from '../components/ItemCard';
 import ItemForm from '../components/ItemForm';
@@ -133,6 +134,14 @@ function Admin({ onLogout }) {
     navigate('/');
   };
 
+  const handleHardRefresh = () => {
+    // Log out admin before hard refresh
+    authService.logout();
+    onLogout();
+    // Force a hard refresh - clears cache and reloads all data
+    window.location.reload();
+  };
+
   const showMessage = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => {
@@ -252,6 +261,20 @@ function Admin({ onLogout }) {
         />
       )}
       <PoweredBy />
+      
+      {/* Hard refresh button - logs out admin before refreshing */}
+      <motion.button
+        className="hard-refresh-button"
+        onClick={handleHardRefresh}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        title="Hard refresh (logout & clear cache)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        <RefreshCw size={18} strokeWidth={2} />
+      </motion.button>
     </div>
   );
 }

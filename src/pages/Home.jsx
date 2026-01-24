@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { RefreshCw } from 'lucide-react';
 import Header from '../components/Header';
 import ItemCard from '../components/ItemCard';
 import PoweredBy from '../components/PoweredBy';
@@ -72,6 +73,12 @@ function Home() {
     navigate('/login');
   };
 
+  const handleHardRefresh = () => {
+    // Force a hard refresh - clears cache and reloads all data
+    // Using location.reload() which will trigger useEffect to reload data
+    window.location.reload();
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -96,7 +103,7 @@ function Home() {
           transition={{ duration: 0.2 }}
         >
           <h1>Welcome to Byteful</h1>
-          <p>Our personal knowledge base for links, commands, and tech resources!</p>
+          <p>A knowledge base for popular links, commands, and tech resources!</p>
         </motion.div>
 
         <div className="filters-section">
@@ -156,6 +163,20 @@ function Home() {
         </div>
       </main>
       <PoweredBy />
+      
+      {/* Hard refresh button */}
+      <motion.button
+        className="hard-refresh-button"
+        onClick={handleHardRefresh}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        title="Hard refresh (clear cache & reload data)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        <RefreshCw size={18} strokeWidth={2} />
+      </motion.button>
     </div>
   );
 }

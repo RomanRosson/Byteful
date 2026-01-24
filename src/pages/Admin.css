@@ -161,6 +161,33 @@
   border-radius: 50%;
 }
 
+.hard-refresh-button {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 100;
+  opacity: 0.7;
+}
+
+.hard-refresh-button:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+  color: var(--accent);
+  opacity: 1;
+  box-shadow: 0 2px 8px rgba(104, 35, 177, 0.3);
+}
+
 @media (max-width: 768px) {
   .admin-content {
     padding: 1rem;
@@ -178,6 +205,13 @@
   .add-button,
   .logout-button {
     flex: 1;
+  }
+
+  .hard-refresh-button {
+    bottom: 1rem;
+    left: 1rem;
+    width: 36px;
+    height: 36px;
   }
 
 }

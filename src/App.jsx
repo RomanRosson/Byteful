@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
+import Docs from './pages/Docs';
+import DocsAdmin from './pages/DocsAdmin';
 import { authService } from './utils/auth';
 import './App.css';
 
@@ -54,6 +56,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/docs" element={<Docs />} />
         <Route 
           path="/login" 
           element={
@@ -69,6 +72,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Admin onLogout={handleLogout} />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/docs-admin" 
+          element={
+            <ProtectedRoute>
+              <DocsAdmin onLogout={handleLogout} />
             </ProtectedRoute>
           } 
         />

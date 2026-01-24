@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Header.css';
 
 function Header({ showAdminButton = false, onAdminClick, showAdminLabel = false }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isDocsPage = location.pathname === '/docs' || location.pathname.startsWith('/docs');
   return (
     <motion.header 
       className="header"
@@ -11,7 +14,7 @@ function Header({ showAdminButton = false, onAdminClick, showAdminLabel = false 
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
       <div className={`header-content ${showAdminLabel ? 'centered' : ''}`}>
-        <Link to="/" className="logo">
+        <Link to={isDocsPage ? '/docs' : '/'} className="logo">
           <motion.div
             className="logo-container"
             whileHover={{ scale: 1.05 }}
@@ -37,15 +40,27 @@ function Header({ showAdminButton = false, onAdminClick, showAdminLabel = false 
             )}
           </motion.div>
         </Link>
-        {showAdminButton && (
-          <motion.button
-            className="admin-button"
-            onClick={onAdminClick}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Admin
-          </motion.button>
+        {!showAdminLabel && (
+          <div className="header-buttons">
+            <motion.button
+              className="docs-button"
+              onClick={() => navigate(isDocsPage ? '/' : '/docs')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isDocsPage ? 'Home' : 'DOCS'}
+            </motion.button>
+            {showAdminButton && (
+              <motion.button
+                className="admin-button"
+                onClick={onAdminClick}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Admin
+              </motion.button>
+            )}
+          </div>
         )}
       </div>
     </motion.header>

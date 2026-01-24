@@ -48,10 +48,27 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS docs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    content TEXT,
+    file_path TEXT,
+    file_type TEXT NOT NULL,
+    file_size INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TRIGGER IF NOT EXISTS update_timestamp 
   AFTER UPDATE ON items
   BEGIN
     UPDATE items SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+  END;
+
+  CREATE TRIGGER IF NOT EXISTS update_docs_timestamp 
+  AFTER UPDATE ON docs
+  BEGIN
+    UPDATE docs SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
   END;
 `);
 
@@ -68,6 +85,30 @@ try {
 } catch (error) {
   // Migration failed, continue
   console.log('Type migration skipped or completed');
+}
+
+// Migrate 'installer' type to 'software'
+try {
+  const installerType = db.prepare('SELECT * FROM types WHERE LOWER(name) = LOWER(?)').get('installer');
+  if (installerType) {
+    // Check if 'software' type already exists
+    const softwareType = db.prepare('SELECT * FROM types WHERE LOWER(name) = LOWER(?)').get('software');
+    if (!softwareType) {
+      // Rename 'installer' to 'software' in types table
+      db.prepare('UPDATE types SET name = ? WHERE id = ?').run('software', installerType.id);
+      // Update all items with 'installer' type to 'software'
+      db.prepare('UPDATE items SET type = ? WHERE LOWER(type) = LOWER(?)').run('software', 'installer');
+      console.log('Migrated "installer" type to "software"');
+    } else {
+      // 'software' already exists, just update items and delete 'installer' type
+      db.prepare('UPDATE items SET type = ? WHERE LOWER(type) = LOWER(?)').run('software', 'installer');
+      db.prepare('DELETE FROM types WHERE id = ?').run(installerType.id);
+      console.log('Merged "installer" items into existing "software" type');
+    }
+  }
+} catch (error) {
+  // Migration failed, continue
+  console.log('Installer to software migration skipped or completed');
 }
 
 // API Routes
@@ -294,6 +335,86 @@ app.get('/api/types', (req, res) => {
       ORDER BY t.name
     `).all();
     res.json(types);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Docs endpoints
+// Get all docs
+app.get('/api/docs', (req, res) => {
+  try {
+    const docs = db.prepare('SELECT * FROM docs ORDER BY created_at DESC').all();
+    res.json(docs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get doc by ID
+app.get('/api/docs/:id', (req, res) => {
+  try {
+    const doc = db.prepare('SELECT * FROM docs WHERE id = ?').get(req.params.id);
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    res.json(doc);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create doc (admin only - check auth in middleware if needed)
+app.post('/api/docs', (req, res) => {
+  try {
+    const { title, content, file_path, file_type, file_size } = req.body;
+    if (!title || !file_type) {
+      return res.status(400).json({ error: 'Title and file type are required' });
+    }
+    const result = db.prepare(
+      'INSERT INTO docs (title, content, file_path, file_type, file_size) VALUES (?, ?, ?, ?, ?)'
+    ).run(title, content || null, file_path || null, file_type, file_size || null);
+    const doc = db.prepare('SELECT * FROM docs WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(doc);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update doc (admin only)
+app.put('/api/docs/:id', (req, res) => {
+  try {
+    const { title, content, file_path, file_type, file_size } = req.body;
+    const doc = db.prepare('SELECT * FROM docs WHERE id = ?').get(req.params.id);
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    db.prepare(
+      'UPDATE docs SET title = ?, content = ?, file_path = ?, file_type = ?, file_size = ? WHERE id = ?'
+    ).run(
+      title || doc.title,
+      content !== undefined ? content : doc.content,
+      file_path !== undefined ? file_path : doc.file_path,
+      file_type || doc.file_type,
+      file_size !== undefined ? file_size : doc.file_size,
+      req.params.id
+    );
+    const updatedDoc = db.prepare('SELECT * FROM docs WHERE id = ?').get(req.params.id);
+    res.json(updatedDoc);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete doc (admin only)
+app.delete('/api/docs/:id', (req, res) => {
+  try {
+    const doc = db.prepare('SELECT * FROM docs WHERE id = ?').get(req.params.id);
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    db.prepare('DELETE FROM docs WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

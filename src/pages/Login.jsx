@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { authService } from '../utils/auth';
 import './Login.css';
@@ -11,6 +11,9 @@ function Login({ onLogin }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/admin';
+  const isDocsAdmin = redirect === '/docs-admin';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +25,7 @@ function Login({ onLogin }) {
       if (authenticated) {
         authService.login();
         onLogin();
-        navigate('/admin');
+        navigate(redirect);
       } else {
         setError('Invalid username or PIN');
       }
@@ -127,8 +130,8 @@ function Login({ onLogin }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <button onClick={() => navigate('/')} className="back-button">
-            ← Back to Home
+          <button onClick={() => navigate(isDocsAdmin ? '/docs' : '/')} className="back-button">
+            ← {isDocsAdmin ? 'Back to Docs' : 'Back to Home'}
           </button>
         </motion.div>
       </motion.div>
